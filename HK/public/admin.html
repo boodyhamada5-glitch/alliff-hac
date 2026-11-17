@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - POWER UP</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --card-bg: #1a1a1a;
+            --border: #333;
+            --text: #e5e5e5;
+            --text-muted: #8a8a8e;
+            --accent: #fff;
+            --danger: #f87171;
+            --success: #10b981;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+        h1 { font-size: 20px; font-weight: 700; }
+        
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--card-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .stat-value { font-size: 24px; font-weight: 700; }
+        
+        .section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+        .section-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .section-body { padding: 16px; }
+        
+        /* Forms */
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .form-group { display: flex; flex-direction: column; flex: 1; min-width: 120px; }
+        label { font-size: 12px; margin-bottom: 6px; color: var(--text-muted); }
+        input, select, textarea { background: #0a0a0a; border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; outline: none; font-size: 14px; }
+        input:focus, select:focus, textarea:focus { border-color: #555; }
+        button { background: #fff; color: #000; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        button.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+        
+        /* Table */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px 16px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); font-weight: 600; }
+        td { padding: 12px 16px; border-bottom: 1px solid #2a2a2a; font-size: 13px; }
+        tr:last-child td { border-bottom: none; }
+        
+        /* Badges */
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-block; }
+        .badge-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-unbound { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+        .badge-expired { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+        .badge-revoked { background: rgba(255, 255, 255, 0.1); color: #aaa; }
+        
+        /* Action Buttons */
+        .action-group { display: flex; gap: 6px; }
+        .btn-action { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 4px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; }
+        .btn-action:hover { background: #2a2a2a; }
+        .btn-admin-danger { color: var(--danger); border-color: rgba(248, 113, 113, 0.3); }
+        
+        /* Filter Tabs */
+        .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-tab { background: rgba(255, 255, 255, 0.05); color: #cacaca; border: none; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; font-weight: normal; }
+        .filter-tab.active { background: #fff; color: #000; font-weight: 700; }
+        
+        /* Toast */
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        
+        /* Utilities */
+        .search-bar { display: flex; gap: 10px; padding: 16px; border-bottom: 1px solid var(--border); }
+        .search-bar input { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>POWER UP - Admin Panel</h1>
+        <button id="refresh-keys-btn" class="btn-outline">↻ Refresh</button>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid-stats">
+        <div class="stat-card">
+            <div class="stat-title">Total Keys</div>
+            <div class="stat-value" id="stat-total-keys">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Active Keys</div>
+            <div class="stat-value" id="stat-active-keys">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Unbound Keys</div>
+            <div class="stat-value" id="stat-unbound-keys">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Connected Users</div>
+            <div class="stat-value" id="stat-connected-users">0 users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Maintenance Mode</div>
+            <div class="stat-value" id="stat-maintenance-status">OFF (Normal)</div>
+        </div>
+    </div>
+
+    <!-- Generate Keys Section -->
+    <div class="section">
+        <div class="section-header">Generate New Keys</div>
+        <div class="section-body">
+            <form id="gen-key-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prefix</label>
+                        <input type="text" id="gen-prefix" value="PWUP" placeholder="e.g. PWUP">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (Days)</label>
+                        <select id="gen-duration">
+                            <option value="1">1 Day</option>
+                            <option value="7">7 Days</option>
+                            <option value="30" selected>30 Days</option>
+                            <option value="90">90 Days</option>
+                            <option value="365">1 Year</option>
+                            <option value="999">Lifetime (999+ Days)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Count</label>
+                        <input type="number" id="gen-count" value="1" min="1" max="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Note (Optional)</label>
+                        <input type="text" id="gen-note" placeholder="e.g. For user X">
+                    </div>
+                </div>
+                <button type="submit">Generate Keys</button>
+            </form>
+            
+            <div id="gen-result" style="display:none; margin-top: 16px; padding: 16px; background: #0a0a0a; border: 1px dashed #444; border-radius: 6px;">
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Latest Generated Key:</div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <code id="gen-result-key" style="font-size:16px; font-weight:700; color:#fff; letter-spacing:1px;">PHTM-XXXX-XXXX-XXXX</code>
+                    <button type="button" id="copy-latest-key-btn" class="btn-action">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keys List Section -->
+    <div class="section">
+        <div class="section-header">License Keys</div>
+        <div class="search-bar">
+            <input type="text" id="key-search" placeholder="Search by key, HWID, or note...">
+        </div>
+        <div class="section-body" style="padding: 0;">
+            <div class="filter-tabs" style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="active">Active</button>
+                <button class="filter-tab" data-filter="unbound">Unbound</button>
+                <button class="filter-tab" data-filter="expired">Expired</button>
+                <button class="filter-tab" data-filter="revoked">Revoked</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Status</th>
+                            <th>Device / HWID</th>
+                            <th>Expiry</th>
+                            <th>Note</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keys-tbody">
+                        <tr><td colspan="6" style="text-align:center; padding:32px; color:#8a8a8e;">Loading keys...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Section -->
+    <div class="section">
+        <div class="section-header">Maintenance Settings</div>
+        <div class="section-body">
+            <form id="maint-form">
+                <div class="form-row" style="align-items: center; margin-bottom: 16px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+                        <input type="checkbox" id="maint-toggle" style="width:auto; padding:0;">
+                        Enable Maintenance Mode
+                    </label>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 100%;">
+                        <label>Allowed Logins (comma separated keys)</label>
+                        <input type="text" id="maint-allowed" placeholder="e.g. OWNER, TEST, PHTM-XXXX-XXXX">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 100%;">
+                        <label>Maintenance Message</label>
+                        <textarea id="maint-msg" rows="2" placeholder="We're doing maintenance. Everything is paused."></textarea>
+                    </div>
+                </div>
+                <button type="submit">Save Maintenance Settings</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast">Message</div>
+
+    <!-- ربط ملف الجافاسكريبت -->
+    <script src="/admin.js"></script>
+</body>
+</html>
